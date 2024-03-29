@@ -3,7 +3,17 @@
 from models.base_model import BaseModel, Base
 from sqlalchemy import Column, String, Integer, Float, ForeignKey, Table
 from sqlalchemy.orm import relationship
-from models.review import Review
+from models.amenity import Amenity
+from os import getenv
+from models import storage
+
+place_amenity = Table('place_amenity', Base.metadata,
+                      Column('place_id', String(60),
+                             ForeignKey('places.id'),
+                             primary_key=True, nullable=False),
+                      Column('amenity_id', String(60),
+                             ForeignKey('amenities.id'),
+                             primary_key=True, nullable=False))
 
 
 class Place(BaseModel, Base):
@@ -23,10 +33,17 @@ class Place(BaseModel, Base):
     amenity_ids = []
     reviews = relationship("Review", backref="place", cascade="delete")
 
-    @property
-    def reviews(self):
-        """Getter attribute returns list review"""
-        from models import storage
-        all_reviews = storage.all(Review)
-        return [review for review in all_reviews.values()
-                if review.place_id == self.id]
+    if getenv('HBNB_TYPE_STORAGE') == 'db':
+        amenities = relationship('Amenity',
+                                 secondary=place_amenity,
+                                 viewonly=False)
+    else:
+        @property
+        def amenities(self):
+            return [amenity for amenity in storage.all
+                    (Amenity).values() if amenity.id in self.amenity_ids]
+
+        @amenities.setter
+        def amenities(self, obj):
+            if type(obj) is Amenity:
+                self.amenity_ids.append(obj.id)
