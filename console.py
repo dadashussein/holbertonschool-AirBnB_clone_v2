@@ -10,6 +10,7 @@ from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
+from os import getenv
 
 
 class HBNBCommand(cmd.Cmd):
@@ -124,30 +125,33 @@ class HBNBCommand(cmd.Cmd):
         pass
 
     def do_create(self, args):
-        """Create an object of any class with given parameters"""
-        args = args.split()
+        """Create an object of any class"""
         if not args:
             print("** class name missing **")
             return
-        elif args[0] not in HBNBCommand.classes:
+        
+        kwargs_dict = {}
+        class_name = args.split()[0]
+        params = args.split()[1:]
+        
+        if class_name not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        class_name = args[0]
-        new_instance = HBNBCommand.classes[class_name]()
-        for arg in args[1:]:
-            if "=" not in arg:
-                continue
-            key, value = arg.split("=", 1)
-            if value[0] == value[-1] == '"':
-                value = value[1:-1].replace('_', ' ').replace('\\', '"')
-            elif '.' in value:
-                value = float(value)
-            else:
+        
+        for param in params:
+            key, value = param.split("=")
+            try:
                 value = int(value)
-            setattr(new_instance, key, value)
-        storage.save()
+            except ValueError:
+                try:
+                    value = float(value)
+                except ValueError:
+                    value = " ".join(value.strip('"').split("_"))
+            kwargs_dict[key] = value
+        
+        new_instance = HBNBCommand.classes[class_name](**kwargs_dict)
         print(new_instance.id)
-        storage.save()
+        new_instance.save()
 
     def help_create(self):
         """Help information for the create method"""
@@ -224,17 +228,30 @@ class HBNBCommand(cmd.Cmd):
         """Shows all objects, or all objects of a class"""
         print_list = []
 
-        if args:
-            args = args.split(" ")[0]  # remove possible trailing args
-            if args not in HBNBCommand.classes:
-                print("** class doesn't exist **")
-                return
-            for k, v in storage._FileStorage__objects.items():
-                if k.split(".")[0] == args:
+        if (getenv("HBNB_TYPE_STORAGE") != "db"):
+            if args:
+                args = args.split(" ")[0]  # remove possible trailing args
+                if args not in HBNBCommand.classes:
+                    print("** class doesn't exist **")
+                    return
+                for k, v in storage._FileStorage__objects.items():
+                    if k.split(".")[0] == args:
+                        print_list.append(str(v))
+            else:
+                for k, v in storage._FileStorage__objects.items():
                     print_list.append(str(v))
         else:
-            for k, v in storage._FileStorage__objects.items():
-                print_list.append(str(v))
+            if args:
+                args = args.split(" ")[0]  # remove possible trailing args
+                if args not in HBNBCommand.classes:
+                    print("** class doesn't exist **")
+                    return
+                for k, v in storage.all(HBNBCommand.classes[args]).items():
+                    if k.split(".")[0] == args:
+                        print_list.append(str(v))
+            else:
+                for k, v in storage.all().items():
+                    print_list.append(str(v))
 
         print(print_list)
 
