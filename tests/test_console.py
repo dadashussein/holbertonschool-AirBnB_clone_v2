@@ -1,43 +1,58 @@
 #!/usr/bin/python3
-"""Test console test module"""
-import MySQLdb
+"""Test for the console module"""
+
 import unittest
-import os
-from unittest import skip, skipIf
+from io import StringIO
 from console import HBNBCommand
+import sys
+from os import getenv
 
 
 class TestConsole(unittest.TestCase):
-    """Test console class"""
+    """Class to test the behavior of the console"""
+
     def setUp(self):
-        self.db = MySQLdb.connect(
-            host=os.environ.get('HBNB_MYSQL_HOST'),
-            user=os.environ.get('HBNB_MYSQL_USER'),
-            passwd=os.environ.get('HBNB_MYSQL_PWD'),
-            db=os.environ.get('HBNB_MYSQL_DB')
-        )
-        create_table = """CREATE TABLE IF NOT EXISTS states (
-        id INT
-        AUTO_INCREMENT
-        PRIMARY KEY,
-        name VARCHAR(128) NOT NULL)"""
-        self.cursor = self.db.cursor()
-        self.cursor.execute("DROP TABLE IF EXISTS states")
-        self.cursor.execute(create_table)
+        """Set up the test environment"""
+        self.console = HBNBCommand()
 
-    def tearDown(self):
-        self.db.close()
+    def test_docstrings_existence(self):
+        """Check if all methods have docstrings"""
+        self.assertIsNotNone(HBNBCommand.do_quit.__doc__)
+        self.assertIsNotNone(HBNBCommand.do_create.__doc__)
+        self.assertIsNotNone(HBNBCommand.do_show.__doc__)
+        self.assertIsNotNone(HBNBCommand.do_destroy.__doc__)
+        self.assertIsNotNone(HBNBCommand.do_all.__doc__)
+        self.assertIsNotNone(HBNBCommand.do_update.__doc__)
 
-    @skipIf(os.getenv('HBNB_TYPE_STORAGE') == 'db', "Not using database")
-    def test_create_state(self):
-        """Test create State command"""
-        self.cursor.execute("SELECT COUNT(*) FROM states")
-        initial_count = self.cursor.fetchone()[0]
-        console = HBNBCommand()
-        console.onecmd("create State name='California'")
-        self.cursor.execute("SELECT COUNT(*) FROM states")
-        final_count = self.cursor.fetchone()[0]
-        self.assertEqual(final_count, initial_count + 1)
+    @classmethod
+    def get_output(cls):
+        """Get the output from stdout"""
+        temp_out = StringIO()
+        sys.stdout = temp_out
+        return temp_out.getvalue()
+
+    def test_create_errors(self):
+        """Test error cases for the create command"""
+        temp_out = StringIO()
+        sys.stdout = temp_out
+
+        self.console.onecmd("create")
+        self.assertEqual(temp_out.getvalue(), '** class name missing **\n')
+        temp_out.close()
+
+        temp_out = StringIO()
+        sys.stdout = temp_out
+        HBNBCommand().do_create("base")
+        self.assertEqual(temp_out.getvalue(), '** class doesn\'t exist **\n')
+        temp_out.close()
+
+        temp_out = StringIO()
+        sys.stdout = temp_out
+        if getenv("HBNB_TYPE_STORAGE") != "db":
+            HBNBCommand().do_create("BaseModel")
+            self.assertTrue(temp_out.getvalue() != "")
+        temp_out.close()
+        sys.stdout = sys.__stdout__
 
 
 if __name__ == "__main__":
