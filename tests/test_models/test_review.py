@@ -12,18 +12,18 @@ class test_review(test_basemodel):
         super().__init__(*args, **kwargs)
         self.name = "Review"
         self.value = Review
+        self.review1 = Review(place_id="eqer-5678-asdf-1234",
+                              user_id="qwer-5678-asdf-1234",
+                              text="This place is great!")
 
     def test_place_id(self):
         """ """
-        new = self.value()
-        self.assertEqual(type(new.place_id), str)
+        self.assertEqual(type(self.review1.place_id), str)
 
     def test_user_id(self):
         """ """
-        new = self.value()
-        self.assertEqual(type(new.user_id), str)
+        self.assertEqual(type(self.review1.user_id), str)
 
     def test_text(self):
         """ """
-        new = self.value()
-        self.assertEqual(type(new.text), str)
+        self.assertEqual(type(self.review1.text), str)
