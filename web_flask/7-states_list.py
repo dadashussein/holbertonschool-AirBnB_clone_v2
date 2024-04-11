@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 
 @app.teardown_appcontext
-def close_session(exception):
+def close_session(exception=None):
     """Close session"""
     storage.close()
 
@@ -17,8 +17,9 @@ def close_session(exception):
 @app.route("/states_list", strict_slashes=False)
 def fetchState():
     """Fetches states from storage"""
-    states = storage.all("State").values()
-    return render_template("7-states_list.html", states=states)
+    states = storage.all("State")
+    sorted_states = sorted(states.values(), key=lambda s: s.name)
+    return render_template("7-states_list.html", states=sorted_states)
 
 
 if __name__ == "__main__":
