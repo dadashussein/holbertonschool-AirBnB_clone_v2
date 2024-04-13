@@ -19,7 +19,7 @@ def fetchState():
     """Fetches states from storage"""
     states = storage.all("State")
     sorted_states = sorted(states.values(), key=lambda s: s.name)
-    return render_template("7-states_list.html", states=sorted_states)
+    return render_template("7-states_list.jinja", states=sorted_states)
 
 
 if __name__ == "__main__":
