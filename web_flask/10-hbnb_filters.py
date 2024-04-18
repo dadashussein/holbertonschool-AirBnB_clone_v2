@@ -13,7 +13,7 @@ def fetchContent():
     states = storage.all("State").values()
     amenities = storage.all("Amenity").values()
     sorted_state = sorted(states, key=lambda s: s.name)
-    return render_template("6-index.html", states=sorted_state,
+    return render_template("10-hbnb_filters.html", states=sorted_state,
                            amenities=amenities)
 
 
